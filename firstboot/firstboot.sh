@@ -63,7 +63,11 @@ export SMALLFAT="/media/m1/12D3-A869"
     echo "   +++ Selected branch not found, falling back to 'release'"
     NVOC_BRANCH="release"
   fi
-  rm -rf ${NVOC}
+  if [[ -d ${NVOC} ]]
+  then
+    echo "  ++ ${NVOC} already exists, cleaning up"
+    rm -rf ${NVOC}
+  fi
   git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
   if [[ -d $MINERS_CACHE/.git/modules/miners && -d $MINERS_CACHE/miners ]]
   then
