@@ -51,7 +51,7 @@ export SMALLFAT="/media/m1/12D3-A869"
   echo ""
   
   echo " + Setting 2unix as custom-command for gnome-terminal 'mining' profile"
-  bash ./profile-manager.sh set-by-name mining custom-command "'bash \'${NVOC}/2unix\''"
+  bash ${FIRSTBOOT}/profile-manager.sh set-by-name mining custom-command "'bash \'${NVOC}/2unix\''"
   echo ""
   
   echo " + Cloning '${NVOC_BRANCH}' nvOC branch into ${NVOC}"
@@ -64,9 +64,8 @@ export SMALLFAT="/media/m1/12D3-A869"
   fi
   rm -rf ${NVOC}
   git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
-  cd $NVOC
-  git submodule update --init --depth 1 --remote miners
-  cd miners
+  git -C ${NVOC} submodule update --init --depth 1 --remote miners
+  pushd ${NVOC}/miners
   if [[ $RECOMPILE_MINERS == false ]]
   then
     bash nvOC_miner_update.sh --no-recompile
@@ -77,7 +76,7 @@ y${RECOMPILE_MINERS}
 EOF
 # DO NOT INDENT - END
   fi
-  cd $FIRSTBOOT
+  popd
   echo ""
   
   echo " + Looking for your customized 1bash"
@@ -94,7 +93,7 @@ EOF
   if [[ $AUTO_EXPAND == true ]]
   then
     echo " + Preparing root partition expansion"
-    sudo bash ./expand_rootfs.sh
+    sudo bash ${FIRSTBOOT}/expand_rootfs.sh
     echo ""
   fi
   
@@ -103,7 +102,7 @@ EOF
   then
     echo "  ++ SUCCESS: switching default gnome-terminal profile from 'firstboot' to 'mining'"
     echo "  ++ This script won't run again. Good luck!"
-    bash ./profile-manager.sh switch-by-name mining
+    bash ${FIRSTBOOT}/profile-manager.sh switch-by-name mining
   else
     echo "  ++ FAILURE: keeping firstboot as default gnome-terminal profile"
     echo "  ++ This script will run again on the next reboot."
