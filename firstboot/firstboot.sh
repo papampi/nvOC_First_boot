@@ -2,6 +2,7 @@
 
 export DISPLAY=:0             # needed by dconf in profile-select.sh
 export FIRSTBOOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+export SMALLFAT="/media/m1/12D3-A869"
 
 ( # logging start
 
@@ -11,7 +12,6 @@ export FIRSTBOOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   # TODO: loop waiting for internet connectivity
   
   echo " + Looking for the small fat partition"
-  SMALLFAT="/media/m1/12D3-A869"
   if ! mountpoint "${SMALLFAT}"
   then
     echo "  ++ mounting fat partition"
@@ -25,20 +25,23 @@ export FIRSTBOOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   NVOC="/home/m1/NVOC/mining"
   AUTO_EXPAND="false"
   RECOMPILE_MINERS="false"
-  if [[ ! -e ${SMALLFAT}/firstboot.json && jq . ${SMALLFAT}/firstboot.json ]]
+  if [[ ! -e ${SMALLFAT}/firstboot.json ]] && jq . ${SMALLFAT}/firstboot.json
   then
     echo "  ++ firstboot.json not found or content is invalid, falling back to defaults"
   else
     if [[ $(jq -r .nvoc_branch ${SMALLFAT}/firstboot.json) != "" ]]
-      NVOC_BRANCH=$(jq -r .nvoc_branch ${SMALLFAT}/firstboot.json)
+    then
+      NVOC_BRANCH="$(jq -r .nvoc_branch ${SMALLFAT}/firstboot.json)"
     fi
     if [[ $(jq -r .recompile_miners ${SMALLFAT}/firstboot.json) != "" ]]
+    then
       RECOMPILE_MINERS=$(jq -r .recompile_miners ${SMALLFAT}/firstboot.json)
     fi
     if [[ $(jq -r .auto_expand ${SMALLFAT}/firstboot.json) != "" ]]
+    then
       AUTO_EXPAND=$(jq -r .auto_expand ${SMALLFAT}/firstboot.json)
     fi
-    if [[ $(jq -r .nvoc_path ${SMALLFAT}/firstboot.json) != "" ]] && mkdir -p $(jq -r .nvoc_path ${SMALLFAT}/firstboot.json)
+    if [[ $(jq -r .nvoc_path ${SMALLFAT}/firstboot.json) != "" ]] && mkdir -p "$(jq -r .nvoc_path ${SMALLFAT}/firstboot.json)"
     then
       NVOC=$(jq -r .nvoc_path ${SMALLFAT}/firstboot.json)
     fi
