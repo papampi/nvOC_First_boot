@@ -63,7 +63,7 @@ export SMALLFAT="/media/m1/12D3-A869"
     NVOC_BRANCH="release"
   fi
   rm -rf ${NVOC}
-  git clone --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
+  git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
   cd $NVOC
   git submodule update --init --depth 1 --remote miners
   cd miners
@@ -83,8 +83,8 @@ EOF
   echo " + Looking for your customized 1bash"
   if [[ -e "${SMALLFAT}/1bash" ]]
   then
-    sudo cp "${SMALLFAT}/1bash" "${NVOC}/1bash"
-    sudo dos2unix ${NVOC}/1bash
+    cp "${SMALLFAT}/1bash" "${NVOC}/1bash"
+    dos2unix ${NVOC}/1bash
   else
     echo "  ++ Cannot find your 1bash, will use the default template instead"
     cp "${NVOC}/1bash.template" "${NVOC}/1bash"
@@ -113,7 +113,7 @@ EOF
   
   echo "$(date) - Done. Rebooting in 5 seconds.."
 
-) | tee -a firstboot.log # logging end
+) 2>&1 | tee -a firstboot.log # logging end
 
 cp -f firstboot.log ${SMALLFAT}/firstboot.log
 sleep 5
