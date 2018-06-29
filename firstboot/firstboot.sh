@@ -23,7 +23,7 @@ export SMALLFAT="/media/m1/12D3-A869"
   echo " + Parsing firstboot.json"
   NVOC_BRANCH="release"
   NVOC="/home/m1/NVOC/mining"
-  MINERS_CACHE="/home/m1/.cache/miners"
+  MINERS_CACHE="/home/m1/.miners-cache"
   AUTO_EXPAND="false"
   RECOMPILE_MINERS="false"
   if [[ ! -e ${SMALLFAT}/firstboot.json ]] && jq . ${SMALLFAT}/firstboot.json
@@ -65,12 +65,19 @@ export SMALLFAT="/media/m1/12D3-A869"
   fi
   rm -rf ${NVOC}
   git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
-  if [[ -d $MINERS_CACHE ]]
+  if [[ -d $MINERS_CACHE/.git/modules/miners && -d $MINERS_CACHE/miners ]]
   then
-    echo "  ++  Found cached miners repo"
-    mv $MINERS_CACHE ${NVOC}
-    git -C ${NVOC}/miners fetch
+    echo "  ++ Found cached miners repo"
+    mv ${MINERS_CACHE}/.git/modules/miners ${NVOC}/.git/modules/
+    mv ${MINERS_CACHE}/miners ${NVOC}/
+    if ! git -C ${NVOC}/miners fetch
+    then
+      echo "   +++ Cache is broken or not compatible, discarding"
+      rm -rf ${NVOC}/.git/modules/miners
+      rm -rf ${NVOC}/miners
+    fi
   fi
+  echo "  ++ Updating miners submodule"
   git -C ${NVOC} submodule update --init --depth 1 --remote miners
   pushd ${NVOC}/miners
   if [[ $RECOMPILE_MINERS == false ]]
