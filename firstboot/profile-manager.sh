@@ -58,8 +58,8 @@ then
 
       if [[ $proname != "" && $proname == "'$2'" ]]
       then
-        echo "setting :($proname)/$3 --> $4"
-        dconf write ${propath}$3 $4
+        echo "setting :($proname)/$3 --> \"$4\""
+        dconf write ${propath}${pro}$3 "$4"
         break
       fi
     fi
