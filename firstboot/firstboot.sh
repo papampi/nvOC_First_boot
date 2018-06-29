@@ -23,6 +23,7 @@ export SMALLFAT="/media/m1/12D3-A869"
   echo " + Parsing firstboot.json"
   NVOC_BRANCH="release"
   NVOC="/home/m1/NVOC/mining"
+  MINERS_CACHE="/home/m1/.cache/miners"
   AUTO_EXPAND="false"
   RECOMPILE_MINERS="false"
   if [[ ! -e ${SMALLFAT}/firstboot.json ]] && jq . ${SMALLFAT}/firstboot.json
@@ -64,6 +65,10 @@ export SMALLFAT="/media/m1/12D3-A869"
   fi
   rm -rf ${NVOC}
   git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
+  if [[ -d $MINERS_CACHE ]]
+  then
+    mv $MINERS_CACHE ${NVOC}
+  fi
   git -C ${NVOC} submodule update --init --depth 1 --remote miners
   pushd ${NVOC}/miners
   if [[ $RECOMPILE_MINERS == false ]]
