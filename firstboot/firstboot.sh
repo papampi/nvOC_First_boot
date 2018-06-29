@@ -9,7 +9,12 @@ export SMALLFAT="/media/m1/12D3-A869"
   echo "$(date) - nvOC FirstBoot start"
   echo ""
   
-  # TODO: loop waiting for internet connectivity
+  echo " + Wait for internet connection before starting firstboot setup"
+  while ! nc -vzw1 google.com 443
+  do
+    echo "  ++ Still waiting"
+    sleep 5
+  done
   
   echo " + Looking for the small fat partition"
   if ! mountpoint "${SMALLFAT}"
