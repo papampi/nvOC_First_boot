@@ -72,8 +72,9 @@ export SMALLFAT="/media/m1/12D3-A869"
   if [[ -d $MINERS_CACHE/.git/modules/miners && -d $MINERS_CACHE/miners ]]
   then
     echo "  ++ Found cached miners repo"
-    mv ${MINERS_CACHE}/.git/modules/miners ${NVOC}/.git/modules/
-    mv ${MINERS_CACHE}/miners ${NVOC}/
+    mkdir -p ${NVOC}/.git/modules # if this folder does not exist it will move cached contents inside modules folder instead of modules/miners
+    mv ${MINERS_CACHE}/.git/modules/miners ${NVOC}/.git/modules
+    mv ${MINERS_CACHE}/miners ${NVOC}
     if ! git -C ${NVOC}/miners fetch
     then
       echo "   +++ Cache is broken or not compatible, discarding"
