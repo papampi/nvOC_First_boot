@@ -67,7 +67,9 @@ export SMALLFAT="/media/m1/12D3-A869"
   git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
   if [[ -d $MINERS_CACHE ]]
   then
+    echo "  ++  Found cached miners repo"
     mv $MINERS_CACHE ${NVOC}
+    git -C ${NVOC}/miners fetch
   fi
   git -C ${NVOC} submodule update --init --depth 1 --remote miners
   pushd ${NVOC}/miners
