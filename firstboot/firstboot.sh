@@ -3,18 +3,15 @@
 export DISPLAY=:0             # needed by dconf in profile-select.sh
 export FIRSTBOOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export SMALLFAT="/media/m1/12D3-A869"
+export LOG_UID="$(date | shasum | head -c 6)"
+
+mkdir -p "${FIRSTBOOT}/tmplogs"
+sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M firstboot_logs ${FIRSTBOOT}/tmplogs
 
 ( # logging start
 
   echo "$(date) - nvOC FirstBoot start"
   echo ""
-  
-  echo " + Wait for internet connection before starting firstboot setup"
-  while ! nc -vzw1 google.com 443
-  do
-    echo "  ++ Still waiting"
-    sleep 5
-  done
   
   echo " + Looking for the small fat partition"
   if ! mountpoint "${SMALLFAT}"
@@ -56,10 +53,23 @@ export SMALLFAT="/media/m1/12D3-A869"
   echo "  ++ nvOC will install to: '${NVOC}'"
   echo ""
   
-  echo " + Setting 2unix as custom-command for gnome-terminal 'mining' profile"
-  bash ${FIRSTBOOT}/profile-manager.sh set-by-name mining custom-command "'bash \'${NVOC}/2unix\''"
-  echo ""
+  if [[ $AUTO_EXPAND == true && ! -e ${FIRSTBOOT}/expand_done ]]
+  then
+    echo " + Preparing root partition expansion"
+    sudo bash ${FIRSTBOOT}/expand_rootfs.sh
+    touch ${FIRSTBOOT}/expand_done
+    echo "  ++ Rebooting to complete excpansion, firstboot will restart"
+    ( sleep 5 && reboot ) &
+    exit
+  fi
   
+  echo " + Wait for internet connection to continue nvOC setup"
+  while ! nc -vzw1 google.com 443
+  do
+    echo "  ++ Still waiting"
+    sleep 5
+  done
+
   echo " + Cloning '${NVOC_BRANCH}' nvOC branch into ${NVOC}"
   NVOC_REPO="https://github.com/papampi/nvOC_by_fullzero_Community_Release"
   echo "  ++ Checking if selected branch actually exists..."
@@ -114,30 +124,36 @@ EOF
   fi
   echo ""
   
-  if [[ $AUTO_EXPAND == true ]]
-  then
-    echo " + Preparing root partition expansion"
-    sudo bash ${FIRSTBOOT}/expand_rootfs.sh
-    echo ""
-  fi
-  
+  echo " + Setting 2unix as custom-command for gnome-terminal 'mining' profile"
+  bash ${FIRSTBOOT}/profile-manager.sh set-by-name mining custom-command "'bash \'${NVOC}/2unix\''"
+  echo ""
+
   echo " + Determining if firstboot can be disabled"
   if [[ -e ${NVOC}/2unix && -e ${NVOC}/1bash ]]
   then
     echo "  ++ SUCCESS: switching default gnome-terminal profile from 'firstboot' to 'mining'"
     echo "  ++ This script won't run again. Good luck!"
     bash ${FIRSTBOOT}/profile-manager.sh switch-by-name mining
+    echo ""
+    echo " + Opening a new terminal on 'mining' profile"
+    gnome-terminal --window-with-profile=mining
   else
     echo "  ++ FAILURE: keeping firstboot as default gnome-terminal profile"
     echo "  ++ This script will run again on the next reboot."
     echo "  ++ Check your fat partition contents or internet connectivity."
   fi
   echo ""
-  
-  echo "$(date) - Done. Rebooting in 5 seconds.."
 
-) 2>&1 | tee -a firstboot.log # logging end
+  echo "  + Saving firstboot_${LOG_UID}.log to small fat partition and $FIRSTBOOT"
+  echo ""
+  echo "$(date) - Done."
 
-cp -f firstboot.log ${SMALLFAT}/firstboot.log
-sleep 5
-sudo reboot
+) 2>&1 | tee -a "${FIRSTBOOT}/tmplogs/firstboot.log" # logging end
+
+# Copy logs to persistent places
+mkdir -p "${FIRSTBOOT}/logs"
+cp -f "${FIRSTBOOT}/tmplogs/firstboot.log" "${FIRSTBOOT}/logs/firstboot_${LOG_UID}.log"
+cp -f "${FIRSTBOOT}/tmplogs/firstboot.log" "${SMALLFAT}/firstboot_${LOG_UID}.log"
+
+# Keep this shell open
+bash
