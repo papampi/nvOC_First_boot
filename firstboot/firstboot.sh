@@ -11,7 +11,7 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
 ( # logging start
 
   echo "$(date) - nvOC FirstBoot start"
-  echo ""
+  echo
   
   echo " + Looking for the small fat partition"
   if ! mountpoint "${SMALLFAT}"
@@ -20,7 +20,7 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
     sudo mkdir -p ${SMALLFAT}
     sudo mount /dev/sda1 ${SMALLFAT}
   fi
-  echo ""
+  echo
   
   echo " + Parsing firstboot.json"
   NVOC_BRANCH="release"
@@ -51,7 +51,7 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
   fi
   echo "  ++ selected branch: '${NVOC_BRANCH}'"
   echo "  ++ nvOC will install to: '${NVOC}'"
-  echo ""
+  echo
   
   if [[ $AUTO_EXPAND == true && ! -e ${FIRSTBOOT}/expand_done ]]
   then
@@ -69,6 +69,7 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
     echo "  ++ Still waiting"
     sleep 5
   done
+  echo
 
   echo " + Cloning '${NVOC_BRANCH}' nvOC branch into ${NVOC}"
   NVOC_REPO="https://github.com/papampi/nvOC_by_fullzero_Community_Release"
@@ -84,6 +85,9 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
     rm -rf ${NVOC}
   fi
   git clone --progress --depth 1 --branch ${NVOC_BRANCH} ${NVOC_REPO} ${NVOC}
+  echo
+
+  echo " + Updating miners submodule"
   if [[ -d $MINERS_CACHE/.git/modules/miners && -d $MINERS_CACHE/miners ]]
   then
     echo "  ++ Found cached miners repo"
@@ -92,15 +96,26 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
     mv ${MINERS_CACHE}/miners ${NVOC}
     if ! git -C ${NVOC}/miners fetch
     then
-      echo "   +++ Cache is broken or not compatible, discarding"
+      echo "   +++ Miners cache is broken or not compatible, discarding"
       rm -rf ${NVOC}/.git/modules/miners
       rm -rf ${NVOC}/miners
     fi
   fi
-  echo "  ++ Updating miners submodule"
   git -C ${NVOC} submodule update --init --depth 1 --remote miners
+  echo
+
+  echo " + Checking free space"
+  FREE_SPACE=$(df --output=avail / | tail -n 1)
+  echo "  ++ Available free space in root partition: ${FREE_SPACE} KB"
+  echo
+
+  echo " + Installing miners (recompile: ${RECOMPILE_MINERS})"
+  if (( FREE_SPACE < 1000000 )) && [[ ${RECOMPILE_MINERS} != false ]]
+  then
+    echo "  ++ Not enaugh free space to safely perform recompilation, will be skipped"
+  fi
   pushd ${NVOC}/miners
-  if [[ $RECOMPILE_MINERS == false ]]
+  if [[ ${RECOMPILE_MINERS} == false ]]
   then
     bash nvOC_miner_update.sh --no-recompile
   else
@@ -111,7 +126,7 @@ EOF
 # DO NOT INDENT - END
   fi
   popd
-  echo ""
+  echo
   
   echo " + Looking for your customized 1bash"
   if [[ -e "${SMALLFAT}/1bash" ]]
@@ -122,11 +137,11 @@ EOF
     echo "  ++ Cannot find your 1bash, will use the default template instead"
     cp "${NVOC}/1bash.template" "${NVOC}/1bash"
   fi
-  echo ""
+  echo
   
   echo " + Setting 2unix as custom-command for gnome-terminal 'mining' profile"
   bash ${FIRSTBOOT}/profile-manager.sh set-by-name mining custom-command "'bash \'${NVOC}/2unix\''"
-  echo ""
+  echo
 
   echo " + Determining if firstboot can be disabled"
   if [[ -e ${NVOC}/2unix && -e ${NVOC}/1bash ]]
@@ -134,7 +149,8 @@ EOF
     echo "  ++ SUCCESS: switching default gnome-terminal profile from 'firstboot' to 'mining'"
     echo "  ++ This script won't run again. Good luck!"
     bash ${FIRSTBOOT}/profile-manager.sh switch-by-name mining
-    echo ""
+    echo
+    
     echo " + Opening a new terminal on 'mining' profile"
     gnome-terminal --window-with-profile=mining
   else
@@ -142,10 +158,10 @@ EOF
     echo "  ++ This script will run again on the next reboot."
     echo "  ++ Check your fat partition contents or internet connectivity."
   fi
-  echo ""
+  echo
 
   echo "  + Saving firstboot_${LOG_UID}.log to small fat partition and $FIRSTBOOT"
-  echo ""
+  echo
   echo "$(date) - Done."
 
 ) 2>&1 | tee -a "${FIRSTBOOT}/tmplogs/firstboot.log" # logging end
