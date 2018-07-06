@@ -88,20 +88,19 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
   echo
 
   echo " + Updating miners submodule"
-  if [[ -d $MINERS_CACHE/.git/modules/miners && -d $MINERS_CACHE/miners ]]
+  if [[ -d $MINERS_CACHE/.git/modules/miners ]]
   then
     echo "  ++ Found cached miners repo"
     mkdir -p ${NVOC}/.git/modules # if this folder does not exist it will move cached contents inside modules folder instead of modules/miners
     mv ${MINERS_CACHE}/.git/modules/miners ${NVOC}/.git/modules
-    mv ${MINERS_CACHE}/miners ${NVOC}
-    if ! git -C ${NVOC}/miners fetch
+    if ! git -C ${NVOC} submodule update --init --force --remote miners
     then
       echo "   +++ Miners cache is broken or not compatible, discarding"
       rm -rf ${NVOC}/.git/modules/miners
       rm -rf ${NVOC}/miners
     fi
   fi
-  git -C ${NVOC} submodule update --init --depth 1 --remote miners
+  git -C ${NVOC} submodule update --init --force --depth 1 --remote miners
   echo
 
   echo " + Checking free space"
