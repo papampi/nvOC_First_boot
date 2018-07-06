@@ -3,6 +3,7 @@
 export DISPLAY=:0             # needed by dconf in profile-select.sh
 export FIRSTBOOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export SMALLFAT="/media/m1/12D3-A869"
+export MINERS_CACHE="/home/m1/.miners-cache"
 export LOG_UID="$(date | shasum | head -c 6)"
 
 mkdir -p "${FIRSTBOOT}/tmplogs"
@@ -25,7 +26,6 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
   echo " + Parsing firstboot.json"
   NVOC_BRANCH="release"
   NVOC="/home/m1/NVOC/mining"
-  MINERS_CACHE="/home/m1/.miners-cache"
   AUTO_EXPAND="false"
   RECOMPILE_MINERS="false"
   if [[ ! -e ${SMALLFAT}/firstboot.json ]] && jq . ${SMALLFAT}/firstboot.json
@@ -88,7 +88,7 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
   echo
 
   echo " + Updating miners submodule"
-  if [[ -d $MINERS_CACHE/.git/modules/miners ]]
+  if [[ -d ${MINERS_CACHE}/.git/modules/miners ]]
   then
     echo "  ++ Found cached miners repo"
     mkdir -p ${NVOC}/.git/modules # if this folder does not exist it will move cached contents inside modules folder instead of modules/miners
@@ -99,6 +99,8 @@ sudo mount -t tmpfs -o defaults,noatime,nosuid,nodev,noexec,mode=1777,size=32M f
       rm -rf ${NVOC}/.git/modules/miners
       rm -rf ${NVOC}/miners
     fi
+  else
+    echo "  ++ No cache found in ${MINERS_CACHE}"
   fi
   git -C ${NVOC} submodule update --init --force --depth 1 --remote miners
   echo
@@ -168,7 +170,7 @@ EOF
 # Copy logs to persistent places
 mkdir -p "${FIRSTBOOT}/logs"
 cp -f "${FIRSTBOOT}/tmplogs/firstboot.log" "${FIRSTBOOT}/logs/firstboot_${LOG_UID}.log"
-cp -f "${FIRSTBOOT}/tmplogs/firstboot.log" "${SMALLFAT}/firstboot_${LOG_UID}.log"
+sudo cp -f "${FIRSTBOOT}/tmplogs/firstboot.log" "${SMALLFAT}/firstboot_${LOG_UID}.log"
 
 # Keep this shell open
 bash
