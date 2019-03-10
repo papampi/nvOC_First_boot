@@ -1,5 +1,6 @@
 #!/bin/bash
 # LuKePicci <github.com/LuKePicci>
+export DISPLAY=:0
 
 propath=/org/gnome/terminal/legacy/profiles:/
 defaultold=$(dconf read ${propath}default)
